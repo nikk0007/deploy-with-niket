@@ -1,2 +1,2 @@
-# deploy-with-niket
-It has all the source code I use to teach Devops, Cloud and Gen AI on my youtube channel "Deploy With Niket"
+# ai-mastery
+AI projects spanning local ai projects, RAG, on cloud, agentic AI, Python Libraries etc
