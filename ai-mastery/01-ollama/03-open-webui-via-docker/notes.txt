@@ -1,0 +1,20 @@
+# start docker desktop
+
+# Open this Github link:
+https://github.com/open-webui/open-webui
+
+# Choose your favorite option to run open webui(here we are using wsl on Windows OS):
+docker run -d -p 3000:8080 --add-host=host.docker.internal:host-gateway -v open-webui:/app/backend/data --name open-webui --restart always ghcr.io/open-webui/open-webui:main
+
+# docker ps
+
+# Access in browser:
+http://localhost:3000/
+
+# login/create account
+
+# try with system prompt:
+You are a devops interviewer. ask 5 questions on the basis of the topic provided.
+
+
+

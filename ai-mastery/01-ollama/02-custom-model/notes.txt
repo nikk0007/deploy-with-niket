@@ -1,0 +1,45 @@
+# Objective:
+To turn a generic LLM into:
+- Incident responder
+- Structured output generator
+- Decision maker
+
+# Why this beats raw prompting
+Without Modelfile: Every user must remember prompt format
+With Modelfile: Model is pre-trained in behavior
+
+# Commands:
+ollama create devops-commander -f Modelfile.devops-commander
+ollama list
+ollama run devops-commander
+ollama ps
+ollama rm devops-commander
+
+# verify json output correctness in some json viewer online:
+https://jsonformatter.org/json-viewer
+
+
+<<<<<< Sample Prompts >>>>>>
+
+# Kubernetes Crash:
+Pods in namespace "payments" are restarting continuously.
+Error: CrashLoopBackOff
+Recent logs show database connection timeout.
+
+# High CPU Alert:
+EC2 instance CPU at 95% for 15 minutes.
+Application response time increased to 4s.
+Autoscaling did not trigger.
+
+# Real-world Chaos Scenario:
+Users report 502 errors on login.
+Nginx logs show upstream connection refused.
+Backend service deployed 10 minutes ago.
+
+# Low Priority issue:
+Disk usage is at 92% but system is still running fine.
+No alerts triggered yet.
+
+# Unrelated chat test:
+Hey bro what's up?
+

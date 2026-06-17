@@ -1,0 +1,1376 @@
+What is AWS Lambda?
+Tip
+Join Serverless experts for free hands-on workshops to learn how to build Serverless
+applications with best practices. Click here to sign up.
+AWS Lambda is a compute service that runs code without the need to manage servers. Your code
+runs, scaling up and down automatically, with pay-per-use pricing. To get started, see Create your
+first function.
+You can use Lambda for:
+• File processing: Process files automatically when uploaded to Amazon Simple Storage Service.
+See file processing examples for details.
+• Long-running workflows: Use durable Lambda functions to build stateful, multi-step workflows
+that can run for up to one year. Perfect for order processing, approval workflows, human-in-theloop processes, and complex data pipelines that need to remember their progress.
+• Database operations and integration examples: Respond to database changes and automate
+data workflows. See database examples for details.
+• Scheduled and periodic tasks: Run automated operations on a regular schedule using
+EventBridge. See scheduled task examples for details.
+• Stream processing: Process real-time data streams for analytics and monitoring. See Kinesis
+Data Streams for details.
+• Web applications: Build scalable web apps that automatically adjust to demand.
+• Mobile backends: Create secure API backends for mobile and web applications.
+• IoT backends: Handle web, mobile, IoT, and third-party API requests. See IoT for details.
+For pricing information, see AWS Lambda Pricing.
+1AWS Lambda Developer Guide
+How Lambda works
+When using Lambda, you are responsible only for your code. Lambda runs your code on a highavailability compute infrastructure and manages all the computing resources, including server and
+operating system maintenance, capacity provisioning, automatic scaling, and logging.
+Because Lambda is a serverless, event-driven compute service, it uses a different programming
+paradigm than traditional web applications. The following model illustrates how Lambda works:
+1. You write and organize your code in Lambda functions, which are the basic building blocks you
+use to create a Lambda application.
+2. You control security and access through Lambda permissions, using execution roles to manage
+what AWS services your functions can interact with and what resource policies can interact with
+your code.
+3. Event sources and AWS services trigger your Lambda functions, passing event data in JSON
+format, which your functions process (this includes event source mappings).
+4. Lambda runs your code with language-specific runtimes (like Node.js and Python) in execution
+environments that package your runtime, layers, and extensions.
+Tip
+To learn how to build serverless solutions, check out the Serverless Developer Guide.
+Key features
+Configure, control, and deploy secure applications:
+• Environment variables modify application behavior without new code deployments.
+• Versions safely test new features while maintaining stable production environments.
+• Lambda layers optimize code reuse and maintenance by sharing common components across
+multiple functions.
+• Code signing enforce security compliance by ensuring only approved code reaches production
+systems.
+Scale and perform reliably:
+How Lambda works 2AWS Lambda Developer Guide
+• Concurrency and scaling controls precisely manage application responsiveness and resource
+utilization during traffic spikes.
+• Lambda SnapStart significantly reduce cold start times. Lambda SnapStart can provide as low as
+sub-second startup performance, typically with no changes to your function code.
+• Response streaming optimize function performance by delivering large payloads incrementally
+for real-time processing.
+• Container images package functions with complex dependencies using container workflows.
+Connect and integrate seamlessly:
+• VPC networks secure sensitive resources and internal services.
+• File system integration that shares persistent data and manage stateful operations across
+function invocations.
+• Function URLs create public-facing APIs and endpoints without additional services.
+• Lambda extensions augment functions with monitoring, security, and operational tools.
+Related information
+• For information on how Lambda works, see How Lambda works.
+• To start using Lambda, see Create your first Lambda function.
+• For a list of example applications, see Getting started with example applications and patterns.
+How Lambda works
+Lambda functions are the basic building blocks you use to build Lambda applications. To write
+functions, it's essential to understand the core concepts and components that make up the Lambda
+programming model. This section will guide you through the fundamental elements you need to
+know to start building serverless applications with Lambda.
+• Lambda functions and function handlers - A Lambda function is a small block of code that runs
+in response to events. Functions can be standard (up to 15 minutes) or durable (up to one year).
+Functions are the basic building blocks you use to build applications. Function handlers are the
+entry point for event objects that your Lambda function code processes.
+Related information 3AWS Lambda Developer Guide
+• Lambda execution environment and runtimes - Lambda execution environments manage
+the resources required to run your function. For durable functions, the execution environment
+includes automatic state management and checkpointing capabilities. Runtimes are the
+language-specific environments your functions run in.
+• Events and triggers - Other AWS services can invoke your functions in response to specific
+events. For durable functions, events can also trigger resumption of paused workflows.
+• Lambda permissions and roles - Control who can access your functions and what other AWS
+services your functions can interact with. Durable functions require additional permissions for
+state management and extended execution.
+Tip
+If you want to start by understanding serverless development more generally, see
+Understanding the difference between traditional and serverless development in the AWS
+Serverless Developer Guide.
+Lambda functions and function handlers
+In Lambda, functions are the fundamental building blocks you use to create applications. A
+Lambda function is a piece of code that runs in response to events, such as a user clicking a
+button on a website or a file being uploaded to an Amazon Simple Storage Service (Amazon S3)
+bucket. With durable functions, your code can pause execution between steps, maintaining state
+automatically, making them ideal for long-running workflows like order processing or content
+moderation. You can think of a function as a kind of self-contained program with the following
+properties.
+A Lambda function handler is the method in your function code that processes events. When a
+function runs in response to an event, Lambda runs the function handler. Data about the event
+that caused the function to run is passed directly to the handler. While the code in a Lambda
+function can contain more than one method or function, Lambda functions can only have one
+handler.
+To create a Lambda function, you bundle your function code and its dependencies in a deployment
+package. Lambda supports two types of deployment package, .zip file archives and container
+images.
+Lambda functions and function handlers 4AWS Lambda Developer Guide
+• A function has one specific job or purpose
+• They run only when needed in response to specific events
+• They automatically stop running when finished
+Lambda execution environment and runtimes
+Lambda functions run inside a secure, isolated execution environment which Lambda manages for
+you. For durable functions, the execution environment includes additional components for state
+management and workflow coordination. The execution environment manages the processes and
+resources that are needed to run your function. When a function is first invoked, Lambda creates
+a new execution environment for the function to run in. After the function has finished running,
+Lambda doesn't stop the execution environment right away; if the function is invoked again,
+Lambda can re-use the existing execution environment.
+The Lambda execution environment also contains a runtime, a language-specific environment that
+relays event information and responses between Lambda and your function. Lambda provides a
+number of managed runtimes for the most popular programming languages, or you can create
+your own.
+For managed runtimes, Lambda automatically applies security updates and patches to functions
+using the runtime.
+Events and triggers
+You can also invoke a Lambda function directly by using the Lambda console, AWS CLI, or one of
+the AWS Software Development Kits (SDKs). It's more usual in a production application for your
+function to be invoked by another AWS service in response to a particular event. For example, you
+might want a function to run whenever an item is added to an Amazon DynamoDB table.
+To make your function respond to events, you set up a trigger. A trigger connects your function
+to an event source, and your function can have multiple triggers. When an event occurs, Lambda
+receives event data as a JSON document and converts it into an object that your code can process.
+You might define the following JSON format for your event and the Lambda runtime converts this
+JSON to an object before passing it to your function's handler.
+Example custom Lambda event
+{
+Lambda execution environment and runtimes 5AWS Lambda Developer Guide
+"Location": "SEA",
+"WeatherData":{
+"TemperaturesF":{
+"MinTempF": 22,
+"MaxTempF": 78
+},
+"PressuresHPa":{
+"MinPressureHPa": 1015,
+"MaxPressureHPa": 1027
+}
+}
+}
+Stream and queue services like Amazon Kinesis or Amazon SQS use an event source mapping
+instead of a standard trigger. Event source mappings poll the source for new data, batch records
+together, and then invoke your function with the batched events. For more information, see How
+event source mappings differ from direct triggers.
+To understand how a trigger works, start by completing the Use an Amazon S3 trigger tutorial, or
+for a general overview of using triggers and instructions on creating a trigger using the Lambda
+console, see Integrating other services.
+Lambda permissions and roles
+For Lambda, there are two main types of permissions that you need to configure:
+• Permissions that your function needs to access other AWS services
+• Permissions that other users and AWS services need to access your function
+The following sections describe both of these permission types and discuss best practices for
+applying least-privilege permissions.
+Permissions for functions to access other AWS resources
+Lambda functions often need to access other AWS resources and perform actions on them. For
+example, a function might read items from a DynamoDB table, store an object in an S3 bucket,
+or write to an Amazon SQS queue. To give functions the permissions they need to perform these
+actions, you use an execution role.
+Lambda permissions and roles 6AWS Lambda Developer Guide
+A Lambda execution role is a special kind of AWS Identity and Access Management (IAM) role, an
+identity you create in your account that has specific permissions associated with it defined in a
+policy.
+Every Lambda function must have an execution role, and a single role can be used by more than
+one function. When a function is invoked, Lambda assumes the function's execution role and is
+granted permission to take the actions defined in the role's policy.
+When you create a function in the Lambda console, Lambda automatically creates an execution
+role for your function. The role's policy gives your function basic permissions to write log outputs
+to Amazon CloudWatch Logs. To give your function permission to perform actions on other
+AWS resources, you need to edit the role to add the extra permissions. The easiest way to add
+permissions is to use an AWS managed policy. Managed policies are created and administered by
+AWS and provide permissions for many common use cases. For example, if your function performs
+CRUD operations on a DynamoDB table, you can add the AmazonDynamoDBFullAccess policy to
+your role.
+Permissions for other users and resources to access your function
+To grant other AWS service permission to access your Lambda function, you use a resourcebased policy. In IAM, resource-based policies are attached to a resource (in this case, your Lambda
+function) and define who can access the resource and what actions they are allowed to take.
+For another AWS service to invoke your function through a trigger, your function's resource-based
+policy must grant that service permission to use the lambda:InvokeFunction action. If you
+create the trigger using the console, Lambda automatically adds this permission for you.
+To grant permission to other AWS users to access your function, you can define this in your
+function's resource-based policy in exactly the same way as for another AWS service or resource.
+You can also use an identity-based policy that's associated with the user.
+Best practices for Lambda permissions
+When you set permissions using IAM policies, security best practice is to grant only the permissions
+required to perform a task. This is known as the principle of least privilege. To get started granting
+permissions for your function, you might choose to use an AWS managed policy. Managed policies
+can be the quickest and easiest way to grant permissions to perform a task, but they might also
+include other permissions you don't need. As you move from early development through test and
+production, we recommend you reduce permissions to only those needed by defining your own
+customer-managed policies.
+Lambda permissions and roles 7AWS Lambda Developer Guide
+The same principle applies when granting permissions to access your function using a resourcebased policy. For example, if you want to give permission to Amazon S3 to invoke your function,
+best practice is to limit access to individual buckets, or buckets in particular AWS accounts, rather
+than giving blanket permissions to the S3 service.
+Lambda permissions and roles 8AWS Lambda Developer Guide
+Running code with Lambda
+When you write a Lambda function, you are creating code that will run in a unique serverless
+environment. Understanding how Lambda actually runs your code involves two key aspects:
+the programming model that defines how your code interacts with Lambda, and the execution
+environment lifecycle that determines how Lambda manages your code's runtime environment.
+The Lambda programming model
+Programming model functions as a common set of rules for how Lambda works with your code,
+regardless of whether you're writing in Python, Java, or any other supported language. The
+programming model includes your runtime and handler.
+For standard functions:
+1. Lambda receives an event.
+2. Lambda uses the runtime to prepare the event in a format your code can use.
+3. The runtime sends the formatted event to your handler.
+4. Your handler processes the event using the code you've written.
+For Durable Functions:
+1. Lambda receives an event
+2. The runtime prepares both the event and DurableContext
+3. Your handler can:
+• Process steps with automatic checkpointing
+• Pause execution without consuming resources
+• Resume from the last successful checkpoint
+• Maintain state between steps
+Essential to this model is the handler, where Lambda sends events to be processed by your code.
+Think of it as the entry point to your code. When Lambda receives an event, it passes this event and
+some context information to your handler. The handler then runs your code to process these events
+- for example, it might read a file when it's uploaded to Amazon S3, analyze an image, or update
+a database. Once your code finishes processing an event, the handler is ready to process the next
+one.
+Running code 9AWS Lambda Developer Guide
+The Lambda execution model
+While the programming model defines how Lambda interacts with your code, Execution
+environment is where Lambda actually runs your function — it's a secure, isolated compute space
+created specifically for your function.
+Each environment follows a lifecycle that varies between standard and durable functions:
+Standard Functions (up to 15 minutes):
+1. Initialization: Environment setup and code loading
+2. Invocation: Single execution of function code
+3. Shutdown: Environment cleanup
+Durable Functions (up to 1 year):
+1. Initialization: Environment and durable state setup
+2. Invocation: Multiple steps with automatic checkpointing
+3. Wait States: Pause execution without resource consumption
+4. Resume: Restart from last checkpoint
+5. Shutdown: Cleanup of durable state
+This environment handles important aspects of running your function. It provides your function
+with memory and a /tmp directory for temporary storage. For Durable Functions, it also
+manages:
+• Automatic state persistence between steps
+• Checkpoint storage and recovery
+• Wait state coordination
+• Progress tracking across long-running executions
+Understanding the Lambda programming model
+Lambda offers two programming models: standard functions that run up to 15 minutes, and
+Durable Functions that can run up to one year. While both share core concepts, Durable Functions
+add capabilities for long-running, stateful workflows.
+Running code 10AWS Lambda Developer Guide
+Lambda provides a programming model that is common to all of the runtimes. The programming
+model defines the interface between your code and the Lambda system. You tell Lambda the entry
+point to your function by defining a handler in the function configuration. The runtime passes in
+objects to the handler that contain the invocation event and the context, such as the function name
+and request ID.
+For Durable Functions, the handler also receives a DurableContext object that provides:
+• Checkpointing capabilities through step()
+• Wait state management through wait() and waitForCallback()
+• Automatic state persistence between invocations
+When the handler finishes processing the first event, the runtime sends it another. For Durable
+Functions, the handler can pause execution between steps, and Lambda will automatically save
+and restore state when the function resumes. The function's class stays in memory, so clients and
+variables that are declared outside of the handler method in initialization code can be reused. To
+save processing time on subsequent events, create reusable resources like AWS SDK clients during
+initialization. Once initialized, each instance of your function can process thousands of requests.
+Your function also has access to local storage in the /tmp directory, a transient cache that can be
+used for multiple invocations. For more information, see Execution environment.
+When AWS X-Ray tracing is enabled, the runtime records separate subsegments for initialization
+and execution.
+The runtime captures logging output from your function and sends it to Amazon CloudWatch
+Logs. In addition to logging your function's output, the runtime also logs entries when function
+invocation starts and ends. This includes a report log with the request ID, billed duration,
+initialization duration, and other details. If your function throws an error, the runtime returns that
+error to the invoker.
+Note
+Logging is subject to CloudWatch Logs quotas. Log data can be lost due to throttling or, in
+some cases, when an instance of your function is stopped.
+Key differences for Durable Functions:
+Running code 11AWS Lambda Developer Guide
+• State is automatically persisted between steps
+• Functions can pause execution without consuming resources
+• Steps are automatically retried on failure
+• Progress is tracked through checkpoints
+Lambda scales your function by running additional instances of it as demand increases, and by
+stopping instances as demand decreases. This model leads to variations in application architecture,
+such as:
+• Unless noted otherwise, incoming requests might be processed out of order or concurrently.
+• Do not rely on instances of your function being long lived, instead store your application's state
+elsewhere.
+• Use local storage and class-level objects to increase performance, but keep to a minimum the
+size of your deployment package and the amount of data that you transfer onto the execution
+environment.
+For a hands-on introduction to the programming model in your preferred programming language,
+see the following chapters.
+• Building Lambda functions with Node.js
+• Building Lambda functions with Python
+• Building Lambda functions with Ruby
+• Building Lambda functions with Java
+• Building Lambda functions with Go
+• Building Lambda functions with C#
+• Building Lambda functions with PowerShell
+Understanding the Lambda execution environment lifecycle
+Lambda execution environments support both standard functions (up to 15 minutes) and Durable
+Functions (up to one year). While both share the same basic lifecycle, Durable Functions add state
+management capabilities for long-running workflows.
+Lambda invokes your function in an execution environment, which provides a secure and isolated
+runtime environment. The execution environment manages the resources required to run your
+Running code 12AWS Lambda Developer Guide
+function. The execution environment also provides lifecycle support for the function's runtime and
+any external extensions associated with your function.
+For Durable Functions, the execution environment includes additional components for:
+• State persistence between steps
+• Checkpointing management
+• Wait state coordination
+• Progress tracking
+Lambda Managed Instances execution environment
+If you are using Lambda Managed Instances, the execution environment has important
+differences compared to Lambda (default) functions. Managed Instances support
+concurrent invocations, use a different lifecycle model, and run on customer-owned
+infrastructure. For detailed information about the Managed Instances execution
+environment, see Understanding the Lambda Managed Instances execution environment.
+The function's runtime communicates with Lambda using the Runtime API. Extensions
+communicate with Lambda using the Extensions API. Extensions can also receive log messages and
+other telemetry from the function by using the Telemetry API.
+When you create your Lambda function, you specify configuration information, such as the amount
+of memory available and the maximum execution time allowed for your function. Lambda uses this
+information to set up the execution environment.
+Running code 13AWS Lambda Developer Guide
+The function's runtime and each external extension are processes that run within the execution
+environment. Permissions, resources, credentials, and environment variables are shared between
+the function and the extensions.
+Topics
+• Lambda execution environment lifecycle
+• Cold starts and latency
+• Reducing cold starts with Provisioned Concurrency
+• Optimizing static initialization
+Lambda execution environment lifecycle
+Each phase starts with an event that Lambda sends to the runtime and to all registered extensions.
+The runtime and each extension indicate completion by sending a Next API request. Lambda
+freezes the execution environment when the runtime and each extension have completed and
+there are no pending events.
+The lifecycle phases for Durable Functions include:
+• Init: Standard initialization plus durable state setup
+• Invoke: Can include multiple step executions with automatic checkpointing
+• Wait: Function can pause execution without consuming resources
+• Resume: Function restarts from last checkpoint
+• Shutdown: Cleanup of durable state and resources
+Topics
+• Init phase
+• Failures during the Init phase
+• Restore phase (Lambda SnapStart only)
+Running code 14AWS Lambda Developer Guide
+• Invoke phase
+• Failures during the invoke phase
+• Shutdown phase
+Init phase
+In the Init phase, Lambda performs three tasks:
+• Start all extensions (Extension init)
+• Bootstrap the runtime (Runtime init)
+• Run the function's static code (Function init)
+• Run any before-checkpoint runtime hooks (Lambda SnapStart only)
+The Init phase ends when the runtime and all extensions signal that they are ready by sending
+a Next API request. The Init phase is limited to 10 seconds. If all three tasks do not complete
+within 10 seconds, Lambda retries the Init phase at the time of the first function invocation with
+the configured function timeout.
+When Lambda SnapStart is activated, the Init phase happens when you publish a function
+version. Lambda saves a snapshot of the memory and disk state of the initialized execution
+environment, persists the encrypted snapshot, and caches it for low-latency access. If you have a
+before-checkpoint runtime hook, then the code runs at the end of Init phase.
+Note
+The 10-second timeout doesn't apply to functions that are using provisioned concurrency,
+SnapStart, or Lambda Managed Instances. For provisioned concurrency, SnapStart, and
+Managed Instances functions, your initialization code can run for up to 15 minutes. The
+time limit is 130 seconds or the configured function timeout (maximum 900 seconds),
+whichever is higher.
+When you use provisioned concurrency, Lambda initializes the execution environment when
+you configure the PC settings for a function. Lambda also ensures that initialized execution
+environments are always available in advance of invocations. You may see gaps between your
+function's invocation and initialization phases. Depending on your function's runtime and memory
+Running code 15AWS Lambda Developer Guide
+configuration, you may also see variable latency on the first invocation on an initialized execution
+environment.
+For functions using on-demand concurrency, Lambda may occasionally initialize execution
+environments ahead of invocation requests. When this happens, you may also observe a time gap
+between your function's initialization and invocation phases. We recommend you to not take a
+dependency on this behavior.
+Failures during the Init phase
+If a function crashes or times out during the Init phase, Lambda emits error information in the
+INIT_REPORT log.
+Example— INIT_REPORT log for timeout
+INIT_REPORT Init Duration: 1236.04 ms Phase: init Status: timeout
+Example— INIT_REPORT log for extension failure
+INIT_REPORT Init Duration: 1236.04 ms Phase: init Status: error Error Type:
+Extension.Crash
+If the Init phase is successful, Lambda doesn't emit the INIT_REPORT log unless SnapStart or
+provisioned concurrency is enabled. SnapStart and provisioned concurrency functions always emit
+INIT_REPORT. For more information, see Monitoring for Lambda SnapStart.
+Restore phase (Lambda SnapStart only)
+When you first invoke a SnapStart function and as the function scales up, Lambda resumes new
+execution environments from the persisted snapshot instead of initializing the function from
+scratch. If you have an after-restore runtime hook, the code runs at the end of the Restore phase.
+You are charged for the duration of after-restore runtime hooks. The runtime must load and afterrestore runtime hooks must complete within the timeout limit (10 seconds). Otherwise, you'll get
+a SnapStartTimeoutException. When the Restore phase completes, Lambda invokes the function
+handler (the Invoke phase).
+Failures during the Restore phase
+If the Restore phase fails, Lambda emits error information in the RESTORE_REPORT log.
+Running code 16AWS Lambda Developer Guide
+Example— RESTORE_REPORT log for timeout
+RESTORE_REPORT Restore Duration: 1236.04 ms Status: timeout
+Example— RESTORE_REPORT log for runtime hook failure
+RESTORE_REPORT Restore Duration: 1236.04 ms Status: error Error Type: Runtime.ExitError
+For more information about the RESTORE_REPORT log, see Monitoring for Lambda SnapStart.
+Invoke phase
+When a Lambda function is invoked in response to a Next API request, Lambda sends an Invoke
+event to the runtime and to each extension.
+The function's timeout setting limits the duration of the entire Invoke phase. For example, if you
+set the function timeout as 360 seconds, the function and all extensions need to complete within
+360 seconds. Note that there is no independent post-invoke phase. The duration is the sum of all
+invocation time (runtime + extensions) and is not calculated until the function and all extensions
+have finished executing.
+The invoke phase ends after the runtime and all extensions signal that they are done by sending a
+Next API request.
+Failures during the invoke phase
+If the Lambda function crashes or times out during the Invoke phase, Lambda resets the
+execution environment. The following diagram illustrates Lambda execution environment behavior
+when there's an invoke failure:
+In the previous diagram:
+• The first phase is the INIT phase, which runs without errors.
+• The second phase is the INVOKE phase, which runs without errors.
+• At some point, suppose your function runs into an invoke failure (common causes include
+function timeouts, runtime errors, memory exhaustion, VPC connectivity issues, permission
+Running code 17AWS Lambda Developer Guide
+errors, concurrency limits, and various configuration problems). For a complete list of possible
+invocation failures, see the section called “Invocation”. The third phase, labeled INVOKE WITH
+ERROR , illustrates this scenario. When this happens, the Lambda service performs a reset.
+The reset behaves like a Shutdown event. First, Lambda shuts down the runtime, then sends a
+Shutdown event to each registered external extension. The event includes the reason for the
+shutdown. If this environment is used for a new invocation, Lambda re-initializes the extension
+and runtime together with the next invocation.
+Note that the Lambda reset does not clear the /tmp directory content prior to the next init
+phase. This behavior is consistent with the regular shutdown phase.
+Note
+AWS is currently implementing changes to the Lambda service. Due to these changes,
+you may see minor differences between the structure and content of system log
+messages and trace segments emitted by different Lambda functions in your AWS
+account.
+If your function's system log configuration is set to plain text, this change affects the
+log messages captured in CloudWatch Logs when your function experiences an invoke
+failure. The following examples show log outputs in both old and new formats.
+These changes will be implemented during the coming weeks, and all functions in all
+AWS Regions except the China and GovCloud regions will transition to use the newformat log messages and trace segments.
+Example CloudWatch Logs log output (runtime or extension crash) - old style
+START RequestId: c3252230-c73d-49f6-8844-968c01d1e2e1 Version: $LATEST
+RequestId: c3252230-c73d-49f6-8844-968c01d1e2e1 Error: Runtime exited without
+providing a reason
+Runtime.ExitError
+END RequestId: c3252230-c73d-49f6-8844-968c01d1e2e1
+REPORT RequestId: c3252230-c73d-49f6-8844-968c01d1e2e1 Duration: 933.59 ms Billed
+Duration: 934 ms Memory Size: 128 MB Max Memory Used: 9 MB
+Example CloudWatch Logs log output (function timeout) - old style
+START RequestId: b70435cc-261c-4438-b9b6-efe4c8f04b21 Version: $LATEST
+Running code 18AWS Lambda Developer Guide
+2024-03-04T17:22:38.033Z b70435cc-261c-4438-b9b6-efe4c8f04b21 Task timed out after
+3.00 seconds
+END RequestId: b70435cc-261c-4438-b9b6-efe4c8f04b21
+REPORT RequestId: b70435cc-261c-4438-b9b6-efe4c8f04b21 Duration: 3004.92 ms Billed
+Duration: 3117 ms Memory Size: 128 MB Max Memory Used: 33 MB Init Duration: 111.23
+ms
+The new format for CloudWatch logs includes an additional statusfield in the REPORT line. In
+the case of a runtime or extension crash, the REPORT line also includes a field ErrorType.
+Example CloudWatch Logs log output (runtime or extension crash) - new style
+START RequestId: 5b866fb1-7154-4af6-8078-6ef6ca4c2ddd Version: $LATEST
+END RequestId: 5b866fb1-7154-4af6-8078-6ef6ca4c2ddd
+REPORT RequestId: 5b866fb1-7154-4af6-8078-6ef6ca4c2ddd Duration: 133.61 ms Billed
+Duration: 214 ms Memory Size: 128 MB Max Memory Used: 31 MB Init Duration: 80.00
+ms Status: error Error Type: Runtime.ExitError
+Example CloudWatch Logs log output (function timeout) - new style
+START RequestId: 527cb862-4f5e-49a9-9ae4-a7edc90f0fda Version: $LATEST
+END RequestId: 527cb862-4f5e-49a9-9ae4-a7edc90f0fda
+REPORT RequestId: 527cb862-4f5e-49a9-9ae4-a7edc90f0fda Duration: 3016.78 ms Billed
+Duration: 3101 ms Memory Size: 128 MB Max Memory Used: 31 MB Init Duration: 84.00
+ms Status: timeout
+• The fourth phase represents the INVOKE phase immediately following an invoke failure.
+Here, Lambda initializes the environment again by re-running the INIT phase. This is called a
+suppressed init. When suppressed inits occur, Lambda doesn't explicitly report an additional INIT
+phase in CloudWatch Logs. Instead, you may notice that the duration in the REPORT line includes
+an additional INIT duration + the INVOKE duration. For example, suppose you see the following
+logs in CloudWatch:
+2022-12-20T01:00:00.000-08:00 START RequestId: XXX Version: $LATEST
+2022-12-20T01:00:02.500-08:00 END RequestId: XXX
+2022-12-20T01:00:02.500-08:00 REPORT RequestId: XXX Duration: 3022.91 ms
+Billed Duration: 3000 ms Memory Size: 512 MB Max Memory Used: 157 MB
+Running code 19AWS Lambda Developer Guide
+In this example, the difference between the REPORT and START timestamps is 2.5 seconds.
+This doesn't match the reported duration of 3022.91 millseconds, because it doesn't take into
+account the extra INIT (suppressed init) that Lambda performed. In this example, you can infer
+that the actual INVOKE phase took 2.5 seconds.
+For more insight into this behavior, you can use the Accessing real-time telemetry
+data for extensions using the Telemetry API. The Telemetry API emits INIT_START,
+INIT_RUNTIME_DONE, and INIT_REPORT events with phase=invoke whenever suppressed
+inits occur in between invoke phases.
+• The fifth phase represents the SHUTDOWN phase, which runs without errors.
+Shutdown phase
+When Lambda is about to shut down the runtime, it sends a Shutdown event to each registered
+external extension. Extensions can use this time for final cleanup tasks. The Shutdown event is a
+response to a Next API request.
+Duration limit: The maximum duration of the Shutdown phase depends on the configuration of
+registered extensions:
+• 0 ms – A function with no registered extensions
+• 500 ms – A function with a registered internal extension
+• 2,000 ms – A function with one or more registered external extensions
+If the runtime or an extension does not respond to the Shutdown event within the limit, Lambda
+ends the process using a SIGKILL signal.
+After the function and all extensions have completed, Lambda maintains the execution
+environment for some time in anticipation of another function invocation. However, Lambda
+terminates execution environments every few hours to allow for runtime updates and maintenance
+—even for functions that are invoked continuously. You should not assume that the execution
+environment will persist indefinitely. For more information, see Implement statelessness in
+functions.
+When the function is invoked again, Lambda thaws the environment for reuse. Reusing the
+execution environment has the following implications:
+Running code 20AWS Lambda Developer Guide
+• Objects declared outside of the function's handler method remain initialized, providing
+additional optimization when the function is invoked again. For example, if your Lambda
+function establishes a database connection, instead of reestablishing the connection, the original
+connection is used in subsequent invocations. We recommend adding logic in your code to check
+if a connection exists before creating a new one.
+• Each execution environment provides between 512 MB and 10,240 MB, in 1-MB increments, of
+disk space in the /tmp directory. The directory content remains when the execution environment
+is frozen, providing a transient cache that can be used for multiple invocations. You can add extra
+code to check if the cache has the data that you stored. For more information on deployment
+size limits, see Lambda quotas.
+• Background processes or callbacks that were initiated by your Lambda function and did not
+complete when the function ended resume if Lambda reuses the execution environment. Make
+sure that any background processes or callbacks in your code are complete before the code exits.
+Cold starts and latency
+When Lambda receives a request to run a function via the Lambda API, the service first prepares an
+execution environment. During this initialization phase, the service downloads your code, starts the
+environment, and runs any initialization code outside of the main handler. Finally, Lambda runs the
+handler code.
+In this diagram, the first two steps of downloading the code and setting up the environment are
+frequently referred to as a “cold start”. You are charged for this time, and it adds latency to your
+overall invocation duration.
+After the invocation completes, the execution environment is frozen. To improve resource
+management and performance, Lambda retains the execution environment for a period of
+time. During this time, if another request arrives for the same function, Lambda can reuse the
+environment. This second request typically finishes more quickly, since the execution environment
+is already fully set up. This is called a “warm start”.
+Running code 21AWS Lambda Developer Guide
+Cold starts typically occur in under 1% of invocations. The duration of a cold start varies from
+under 100 ms to over 1 second. In general, cold starts are typically more common in development
+and test functions than production workloads. This is because development and test functions are
+usually invoked less frequently.
+Reducing cold starts with Provisioned Concurrency
+If you need predictable function start times for your workload, provisioned concurrency is the
+recommended solution to ensure the lowest possible latency. This feature pre-initializes execution
+environments, reducing cold starts.
+For example, a function with a provisioned concurrency of 6 has 6 execution environments prewarmed.
+Optimizing static initialization
+Static initialization happens before the handler code starts running in a function. This is the
+initialization code that you provide, that is outside of the main handler. This code is often used
+to import libraries and dependencies, set up configurations, and initialize connections to other
+services.
+The following Python example shows importing, and configuring modules, and creating the
+Amazon S3 client during the initialization phase, before the lambda_handler function runs
+during invoke.
+import os
+import json
+Running code 22AWS Lambda Developer Guide
+import cv2
+import logging
+import boto3
+s3 = boto3.client('s3')
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+def lambda_handler(event, context):
+# Handler logic...
+The largest contributor of latency before function execution comes from initialization code. This
+code runs when a new execution environment is created for the first time. The initialization code is
+not run again if an invocation uses a warm execution environment. Factors that affect initialization
+code latency include:
+• The size of the function package, in terms of imported libraries and dependencies, and Lambda
+layers.
+• The amount of code and initialization work.
+• The performance of libraries and other services in setting up connections and other resources.
+There are a number of steps that developers can take to optimize static initialization latency. If a
+function has many objects and connections, you may be able to rearchitect a single function into
+multiple, specialized functions. These are individually smaller and each have less initialization code.
+It’s important that functions only import the libraries and dependencies that they need. For
+example, if you only use Amazon DynamoDB in the AWS SDK, you can require an individual service
+instead of the entire SDK. Compare the following three examples:
+// Instead of const AWS = require('aws-sdk'), use:
+const DynamoDB = require('aws-sdk/clients/dynamodb')
+// Instead of const AWSXRay = require('aws-xray-sdk'), use:
+const AWSXRay = require('aws-xray-sdk-core')
+// Instead of const AWS = AWSXRay.captureAWS(require('aws-sdk')), use:
+const dynamodb = new DynamoDB.DocumentClient()
+AWSXRay.captureAWSClient(dynamodb.service)
+Running code 23AWS Lambda Developer Guide
+Static initialization is also often the best place to open database connections to allow a function to
+reuse connections over multiple invocations to the same execution environment. However, you may
+have large numbers of objects that are only used in certain execution paths in your function. In this
+case, you can lazily load variables in the global scope to reduce the static initialization duration.
+Avoid global variables for context-specific information. If your function has a global variable
+that is used only for the lifetime of a single invocation and is reset for the next invocation, use a
+variable scope that is local to the handler. Not only does this prevent global variable leaks across
+invocations, it also improves the static initialization performance.
+Running code 24AWS Lambda Developer Guide
+Creating event-driven architectures with Lambda
+An event is anything that triggers a Lambda function to run. Events can trigger a Lambda function
+in two ways: through direct invocation (push) and event source mappings (pull).
+Many AWS services can directly invoke your Lambda functions. These services push events to your
+Lambda function. Events that trigger functions can be almost anything, from an HTTP request
+through API Gateway, a schedule managed by an EventBridge rule, an AWS IoT event, or an
+Amazon S3 event. With event source mapping, Lambda actively fetches (or pulls) events from a
+queue or stream. You configure Lambda to check for events from a supported service, and Lambda
+handles the polling and invocation of your function.
+When passed to your function, events are structured in JSON format. The JSON structure varies
+depending on the service that generates it and the event type. While standard Lambda function
+invocations can last up to 15 minutes (or up to one year with durable functions), Lambda is bestsuited for short invocations that last one second or less. This is particularly true of event-driven
+architectures, where each Lambda function is treated as a microservice responsible for performing
+a narrow set of specific instructions.
+Note
+Event-driven architectures communicate across different systems using networks, which
+introduce variable latency. For workloads that require very low latency, such as real-time
+trading systems, this design might not be the best choice. However, for highly scalable and
+available workloads, or those with unpredictable traffic patterns, event-driven architectures
+can provide an effective way to meet these demands.
+Topics
+• Benefits of event-driven architectures
+• Trade-offs of event-driven architectures
+• Anti-patterns in Lambda-based event-driven applications
+Benefits of event-driven architectures
+Lambda supports two methods of invocation in event-driven architectures:
+Creating event-driven architectures 25AWS Lambda Developer Guide
+1. Direct invocation (push method): AWS services trigger Lambda functions directly. For example:
+• Amazon S3 triggers a function when a file is uploaded
+• API Gateway triggers a function when it receives an HTTP request
+2. Event source mapping (pull method): Lambda retrieves events and invokes functions. For
+example:
+• Lambda retrieves messages from an Amazon SQS queue and invokes a function
+• Lambda reads records from a DynamoDB stream and invokes a function
+Both methods contribute to the benefits of event-driven architectures, as described below.
+Replacing polling and webhooks with events
+Many traditional architectures use polling and webhook mechanisms to communicate state
+between different components. Polling can be highly inefficient for fetching updates since there
+is a lag between new data becoming available and synchronization with downstream services.
+Webhooks are not always supported by other microservices that you want to integrate with. They
+might also require custom authorization and authentication configurations. In both cases, these
+integration methods are challenging to scale on-demand without additional work by development
+teams.
+Creating event-driven architectures 26AWS Lambda Developer Guide
+Both of these mechanisms can be replaced by events, which can be filtered, routed, and pushed
+downstream to consuming microservices. This approach can result in less bandwidth consumption,
+CPU utilization, and potentially lower cost. These architectures can also reduce complexity, since
+each functional unit is smaller and there is often less code.
+Creating event-driven architectures 27AWS Lambda Developer Guide
+Event-driven architectures can also make it easier to design near-real-time systems, helping
+organizations move away from batch-based processing. Events are generated at the time when
+state in the application changes, so the custom code of a microservice should be designed to
+handle the processing of a single event. Since scaling is handled by the Lambda service, this
+architecture can handle significant increases in traffic without changing custom code. As events
+scale up, so does the compute layer that processes events.
+Reducing complexity
+Microservices enable developers and architects to simplify complex workflows. For example, an
+ecommerce monolith can be broken down into order acceptance and payment processes with
+separate inventory, fulfillment and accounting services. What might be complex to manage
+and orchestrate in a monolith becomes a series of decoupled services that communicate
+asynchronously with events.
+This approach also makes it possible to assemble services that process data at different rates. In
+this case, an order acceptance microservice can store high volumes of incoming orders by buffering
+the messages in an Amazon SQS queue.
+A payment processing service, which is typically slower due to the complexity of handling
+payments, can take a steady stream of messages from the Amazon SQS queue. It can orchestrate
+complex retry and error handling logic using AWS Step Functions, and coordinate active payment
+workflows for hundreds of thousands of orders.
+Alternative approach: For orchestration using standard programming languages, you can use
+Lambda durable functions. Durable functions let you write the order acceptance, payment
+processing, and notification logic in code with automatic checkpointing and retry. This approach
+Creating event-driven architectures 28AWS Lambda Developer Guide
+works well when the workflow primarily involves Lambda functions and you prefer keeping
+orchestration logic in code.
+Improving scalability and extensibility
+Microservices generate events that are typically published to messaging services like Amazon
+SNS and Amazon SQS. These behave like an elastic buffer between microservices and help handle
+scaling when traffic increases. Services like Amazon EventBridge can then filter and route messages
+depending upon the content of the event, as defined in rules. As a result, event-based applications
+can be more scalable and offer greater redundancy than monolithic applications.
+This system is also highly extensible, allowing other teams to extend features and add functionality
+without impacting the order processing and payment processing microservices. By publishing
+events using EventBridge, this application integrates with existing systems, such as the inventory
+microservice, but also enables any future application to integrate as an event consumer. Producers
+of events have no knowledge of event consumers, which can help simplify the microservice logic.
+Trade-offs of event-driven architectures
+Variable latency
+Unlike monolithic applications, which might process everything within the same memory space on
+a single device, event-driven applications communicate across networks. This design introduces
+variable latency. While it’s possible to engineer applications to minimize latency, monolithic
+applications can almost always be optimized for lower latency at the expense of scalability and
+availability.
+Workloads that require consistent low-latency performance, such as high-frequency trading
+applications in banks or sub-millisecond robotics automation in warehouses, are not good
+candidates for event-driven architecture.
+Eventual consistency
+An event represents a change in state, and with many events flowing through different services
+in an architecture at any given point of time, such workloads are often eventually consistent. This
+makes it more complex to process transactions, handle duplicates, or determine the exact overall
+state of a system.
+Some workloads contain a combination of requirements that are eventually consistent (for
+example, total orders in the current hour) or strongly consistent (for example, current inventory).
+Creating event-driven architectures 29AWS Lambda Developer Guide
+For workloads needing strong data consistency, there are architecture patterns to support this. For
+example:
+• DynamoDB can provide strongly consistent reads, sometimes at a higher latency, consuming a
+greater throughput than the default mode. DynamoDB can also support transactions to help
+maintain data consistency.
+• You can use Amazon RDS for features needing ACID properties, though relational databases
+are generally less scalable than NoSQL databases like DynamoDB. Amazon RDS Proxy can help
+manage connection pooling and scaling from ephemeral consumers like Lambda functions.
+Event-based architectures are usually designed around individual events instead of large batches
+of data. Generally, workflows are designed to manage the steps of an individual event or execution
+flow instead of operating on multiple events simultaneously. In serverless, real-time event
+processing is preferred over batch processing: batches should be replaced with many smaller
+incremental updates. While this can make workloads more available and scalable, it also makes it
+more challenging for events to have awareness of other events.
+Returning values to callers
+In many cases, event-based applications are asynchronous. This means that caller services do not
+wait for requests from other services before continuing with other work. This is a fundamental
+characteristic of event-driven architectures that enables scalability and flexibility. This means that
+passing return values or the result of a workflow is more complex than in synchronous execution
+flows.
+Most Lambda invocations in production systems are asynchronous, responding to events from
+services like Amazon S3 or Amazon SQS. In these cases, the success or failure of processing an
+event is often more important than returning a value. Features such as dead letter queues (DLQs)
+in Lambda are provided to ensure you can identify and retry failed events, without needing to
+notify the caller.
+Debugging across services and functions
+Debugging event-driven systems is also different compared to a monolithic application. With
+different systems and services passing events, it's not possible to record and reproduce the exact
+state of multiple services when errors occur. Since each service and function invocation has
+separate log files, it can be more complicated to determine what happened to a specific event that
+caused an error.
+Creating event-driven architectures 30AWS Lambda Developer Guide
+There are three important requirements for building a successful debugging approach in eventdriven systems. First, a robust logging system is critical, and this is provided across AWS services
+and embedded in Lambda functions by Amazon CloudWatch. Second, in these systems, it’s
+important to ensure that every event has a transaction identifier that is logged at each step
+throughout a transaction, to help when searching for logs.
+Finally, it’s highly recommended to automate the parsing and analysis of logs by using a debugging
+and monitoring service like AWS X-Ray. This can consume logs across multiple Lambda invocations
+and services, making it much easier to pinpoint the root cause of issues. See Troubleshooting
+walkthrough for in-depth coverage of using X-Ray for troubleshooting.
+Anti-patterns in Lambda-based event-driven applications
+When building event-driven architectures with Lambda, avoid the following common anti-patterns.
+These patterns work but can increase costs and complexity.
+The Lambda monolith
+In many applications migrated from traditional servers, such as Amazon EC2 instances or Elastic
+Beanstalk applications, developers “lift and shift” existing code. Frequently, this results in a single
+Lambda function that contains all of the application logic that is triggered for all events. For a basic
+web application, a monolithic Lambda function would handle all API Gateway routes and integrate
+with all necessary downstream resources.
+This approach has several drawbacks:
+Creating event-driven architectures 31AWS Lambda Developer Guide
+• Package size – The Lambda function might be much larger because it contains all possible code
+for all paths, which makes it slower for the Lambda service to run.
+• Hard to enforce least privilege – The function’s execution role must allow permissions to all
+resources needed for all paths, making the permissions very broad. This is a security concern.
+Many paths in the functional monolith do not need all the permissions that have been granted.
+• Harder to upgrade – In a production system, any upgrades to the single function are more risky
+and could break the entire application. Upgrading a single path in the Lambda function is an
+upgrade to the entire function.
+• Harder to maintain – It’s more difficult to have multiple developers working on the service since
+it’s a monolithic code repository. It also increases the cognitive burden on developers and makes
+it harder to create appropriate test coverage for code.
+• Harder to reuse code – It's harder to separate reusable libraries from monoliths, making code
+reuse more difficult. As you develop and support more projects, this can make it harder to
+support the code and scale your team’s velocity.
+• Harder to test – As the lines of code increase, it becomes harder to unit test all the possible
+combinations of inputs and entry points in the code base. It’s generally easier to implement unit
+testing for smaller services with less code.
+The preferred alternative is to break down the monolithic Lambda function into individual
+microservices, mapping a single Lambda function to a single, well-defined task. In this simple web
+application with a few API endpoints, the resulting microservice-based architecture can be based
+upon the API Gateway routes.
+Creating event-driven architectures 32AWS Lambda Developer Guide
+Recursive patterns that cause runaway Lambda functions
+AWS services generate events that invoke Lambda functions, and Lambda functions can send
+messages to AWS services. Generally, the service or resource that invokes a Lambda function
+should be different to the service or resource that the function outputs to. Failure to manage this
+can result in infinite loops.
+For example, a Lambda function writes an object to an Amazon S3 object, which in turn invokes the
+same Lambda function via a put event. The invocation causes a second object to be written to the
+bucket, which invokes the same Lambda function:
+Creating event-driven architectures 33AWS Lambda Developer Guide
+While the potential for infinite loops exists in most programming languages, this anti-pattern has
+the potential to consume more resources in serverless applications. Both Lambda and Amazon
+S3 automatically scale based upon traffic, so the loop can cause Lambda to scale to consume all
+available concurrency and Amazon S3 will continue to write objects and generate more events for
+Lambda.
+This example uses S3, but the risk of recursive loops also exists in Amazon SNS, Amazon SQS,
+DynamoDB, and other services. You can use recursive loop detection to find and avoid this antipattern.
+Lambda functions calling Lambda functions
+Functions enable encapsulation and code re-use. Most programming languages support the
+concept of code synchronously calling functions within a code base. In this case, the caller waits
+until the function returns a response.
+Note
+While Lambda functions directly calling other Lambda functions is generally an antipattern due to cost and complexity concerns, this doesn't apply to durable functions, which
+are specifically designed to orchestrate multi-step workflows by invoking other functions.
+Creating event-driven architectures 34AWS Lambda Developer Guide
+When this happens on a traditional server or virtual instance, the operating system scheduler
+switches to other available work. Whether the CPU runs at 0% or 100% does not affect the overall
+cost of the application, since you are paying for the fixed cost of owning and operating a server.
+This model often does not adapt well to serverless development. For example, consider a simple
+ecommerce application consisting of three Lambda functions that process an order:
+In this case, the Create order function calls the Process payment function, which in turn calls the
+Create invoice function. While this synchronous flow might work within a single application on a
+server, it introduces several avoidable problems in a distributed serverless architecture:
+• Cost – With Lambda, you pay for the duration of an invocation. In this example, while the Create
+invoice functions runs, two other functions are also running in a wait state, shown in red on the
+diagram.
+• Error handling – In nested invocations, error handling can become much more complex. For
+example, an error in Create invoice might require the Process payment function to reverse the
+charge, or it might instead retry the Create invoice process.
+• Tight coupling – Processing a payment typically takes longer than creating an invoice. In this
+model, the availability of the entire workflow is limited by the slowest function.
+• Scaling – The concurrency of all three functions must be equal. In a busy system, this uses more
+concurrency than would otherwise be needed.
+In serverless applications, there are two common approaches to avoid this pattern. First, use
+an Amazon SQS queue between Lambda functions. If a downstream process is slower than an
+upstream process, the queue durably persists messages and decouples the two functions. In this
+Creating event-driven architectures 35AWS Lambda Developer Guide
+example, the Create order function would publish a message to an Amazon SQS queue, and the
+Process payment function consumes messages from the queue.
+The second approach is to use AWS Step Functions. For complex processes with multiple types
+of failure and retry logic, Step Functions can help reduce the amount of custom code needed to
+orchestrate the workflow. As a result, Step Functions orchestrates the work and robustly handles
+errors and retries, and the Lambda functions contain only business logic.
+Synchronous waiting within a single Lambda function
+Make sure that any potentially concurrent activities are not scheduled synchronously within a
+single Lambda function. For example, a Lambda function might write to an S3 bucket and then
+write to a DynamoDB table:
+In this design, wait times are compounded because the activities are sequential. In cases where the
+second task depends on the completion of the first task, you can reduce the total waiting time and
+the cost of execution by have two separate Lambda functions:
+Creating event-driven architectures 36AWS Lambda Developer Guide
+In this design, the first Lambda function responds immediately after putting the object to the
+Amazon S3 bucket. The S3 service invokes the second Lambda function, which then writes data
+to the DynamoDB table. This approach minimizes the total wait time in the Lambda function
+executions.
+Creating event-driven architectures 37AWS Lambda Developer Guide
+Designing Lambda applications
+A well-architected event-driven application uses a combination of AWS services and custom
+code to process and manage requests and data. This chapter focuses on Lambda-specific topics
+in application design. There are many important considerations for serverless architects when
+designing applications for busy production systems.
+Many of the best practices that apply to software development and distributed systems also apply
+to serverless application development. The overall goal is to develop workloads that are:
+• Reliable – offering your end users a high level of availability. AWS serverless services are reliable
+because they are also designed for failure.
+• Durable – providing storage options that meet the durability needs of your workload.
+• Secure – following best practices and using the tools provided to secure access to workloads and
+limit the blast radius.
+• Performant – using computing resources efficiently and meeting the performance needs of your
+end users.
+• Cost-efficient– designing architectures that avoid unnecessary cost that can scale without
+overspending, and also be decommissioned without significant overhead.
+The following design principles can help you build workloads that meet these goals. Not every
+principle may apply to every architecture, but they should guide you in general architecture
+decisions.
+Topics
+• Use services instead of custom code
+• Understand Lambda abstraction levels
+• Implement statelessness in functions
+• Minimize coupling
+• Build for on-demand data instead of batches
+• Choose an orchestration option for complex workflows
+• Implement idempotency
+• Use multiple AWS accounts for managing quotas
+Designing an application 38AWS Lambda Developer Guide
+Use services instead of custom code
+Serverless applications usually comprise several AWS services, integrated with custom code run
+in Lambda functions. While Lambda can be integrated with most AWS services, the services most
+commonly used in serverless applications are:
+Category AWS service
+Compute AWS Lambda
+Data storage Amazon S3
+Amazon DynamoDB
+Amazon RDS
+API Amazon API Gateway
+Application integration Amazon EventBridge
+Amazon SNS
+Amazon SQS
+Orchestration Lambda durable functions
+AWS Step Functions
+Streaming data and analytics Amazon Data Firehose
+Note
+Many serverless services provide replication and support for multiple Regions, including
+DynamoDB and Amazon S3. Lambda functions can be deployed in multiple Regions as part
+of a deployment pipeline, and API Gateway can be configured to support this configuration.
+See this example architecture that shows how this can be achieved.
+There are many well-established, common patterns in distributed architectures that you can build
+yourself or implement using AWS services. For most customers, there is little commercial value in
+Designing an application 39AWS Lambda Developer Guide
+investing time to develop these patterns from scratch. When your application needs one of these
+patterns, use the corresponding AWS service:
+Pattern AWS service
+Queue Amazon SQS
+Event bus Amazon EventBridge
+Publish/subscribe (fan-out) Amazon SNS
+Orchestration Lambda durable functions
+AWS Step Functions
+API Amazon API Gateway
+Event streams Amazon Kinesis
+These services are designed to integrate with Lambda and you can use infrastructure as code
+(IaC) to create and discard resources in the services. You can use any of these services via the AWS
+SDK without needing to install applications or configure servers. Becoming proficient with using
+these services via code in your Lambda functions is an important step to producing well-designed
+serverless applications.
+Understand Lambda abstraction levels
+The Lambda service limits your access to the underlying operating systems, hypervisors, and
+hardware running your Lambda functions. The service continuously improves and changes
+infrastructure to add features, reduce cost and make the service more performant. Your code
+should assume no knowledge of how Lambda is architected and assume no hardware affinity.
+Similarly, Lambda's integrations with other services are managed by AWS, with only a small
+number of configuration options exposed to you. For example, when API Gateway and Lambda
+interact, there is no concept of load balancing since it is entirely managed by the services. You also
+have no direct control over which Availability Zones the services use when invoking functions at
+any point in time, or how Lambda determines when to scale up or down the number of execution
+environments.
+Designing an application 40AWS Lambda Developer Guide
+This abstraction helps you focus on the integration aspects of your application, the flow of data,
+and the business logic where your workload provides value to your end users. Allowing the services
+to manage the underlying mechanics helps you develop applications more quickly with less custom
+code to maintain.
+Implement statelessness in functions
+For standard Lambda functions, you should assume that the environment exists only for a single
+invocation. The function should initialize any required state when it is first started. For example,
+your function may require fetching data from a DynamoDB table. It should commit any permanent
+data changes to a durable store such as Amazon S3, DynamoDB, or Amazon SQS before exiting. It
+should not rely on any existing data structures or temporary files, or any internal state that would
+be managed by multiple invocations.
+When using Durable Functions, state is automatically preserved between invocations, eliminating
+the need to manually persist state to external storage. However, you should still follow stateless
+principles for any data not explicitly managed through the DurableContext.
+To initialize database connections and libraries, or load state, you can take advantage of static
+initialization. Since execution environments are reused where possible to improve performance,
+you can amortize the time taken to initialize these resources over multiple invocations. However,
+you should not store any variables or data used in the function within this global scope.
+Minimize coupling
+Most architectures should prefer many, shorter functions over fewer, larger ones. The purpose
+of each function should be to handle the event passed into the function, with no knowledge or
+expectations of the overall workflow or volume of transactions. This makes the function agnostic
+to the source of the event with minimal coupling to other services.
+Any global-scope constants that change infrequently should be implemented as environment
+variables to allow updates without deployments. Any secrets or sensitive information should be
+stored in AWS Systems Manager Parameter Store or AWS Secrets Manager and loaded by the
+function. Since these resources are account-specific, you can create build pipelines across multiple
+accounts. The pipelines load the appropriate secrets per environment, without exposing these to
+developers or requiring any code changes.
+Designing an application 41AWS Lambda Developer Guide
+Build for on-demand data instead of batches
+Many traditional systems are designed to run periodically and process batches of transactions that
+have built up over time. For example, a banking application may run every hour to process ATM
+transactions into central ledgers. In Lambda-based applications, the custom processing should be
+triggered by every event, allowing the service to scale up concurrency as needed, to provide nearreal time processing of transactions.
+While standard Lambda functions are limited to 15 minutes of execution time, Durable Functions
+can run for up to one year, making them suitable for longer-running processing needs. However,
+you should still prefer event-driven processing over batch processing when possible.
+While you can run cron tasks in serverless applications by using scheduled expressions for rules in
+Amazon EventBridge, these should be used sparingly or as a last-resort. In any scheduled task that
+processes a batch, there is the potential for the volume of transactions to grow beyond what can
+be processed within the 15-minute Lambda duration limit. If the limitations of external systems
+force you to use a scheduler, you should generally schedule for the shortest reasonable recurring
+time period.
+For example, it’s not best practice to use a batch process that triggers a Lambda function to fetch
+a list of new Amazon S3 objects. This is because the service may receive more new objects in
+between batches than can be processed within a 15-minute Lambda function.
+Designing an application 42AWS Lambda Developer Guide
+Instead, Amazon S3 should invoke the Lambda function each time a new object is put into the
+bucket. This approach is significantly more scalable and works in near-real time.
+Choose an orchestration option for complex workflows
+Workflows that involve branching logic, different types of failure models, and retry logic typically
+use an orchestrator to keep track of the state of the overall execution. Don't build ad-hoc
+orchestration in standard Lambda functions. This results in tight coupling, complex routing code,
+and no automatic state recovery.
+Instead, use one of these purpose-built orchestration options:
+Designing an application 43AWS Lambda Developer Guide
+• Lambda durable functions: Application-centric orchestration using standard programming
+languages with automatic checkpointing, built-in retry, and execution recovery. Ideal for
+developers who prefer keeping workflow logic in code alongside business logic within Lambda.
+• AWS Step Functions: Visual workflow orchestration with native integrations to 220+ AWS
+services. Ideal for multi-service coordination, zero-maintenance infrastructure, and visual
+workflow design.
+For guidance on choosing between these options, see Durable functions or Step Functions.
+With Step Functions, you use state machines to manage orchestration. This extracts the error
+handling, routing, and branching logic from your code, replacing it with state machines declared
+using JSON. Apart from making workflows more robust and observable, you can also add
+versioning to workflows and make the state machine a codified resource that you can add to a code
+repository.
+It’s common for simpler workflows in Lambda functions to become more complex over time. When
+operating a production serverless application, it’s important to identify when this is happening, so
+you can migrate this logic to a state machine or durable function.
+Implement idempotency
+AWS serverless services, including Lambda, are fault-tolerant and designed to handle failures. For
+example, if a service invokes a Lambda function and there is a service disruption, Lambda invokes
+your function in a different Availability Zone. If your function throws an error, Lambda retries the
+invocation.
+Since the same event may be received more than once, functions should be designed to be
+idempotent. This means that receiving the same event multiple times does not change the result
+beyond the first time the event was received.
+You can implement idempotency in Lambda functions by using a DynamoDB table to track recently
+processed identifiers to determine if the transaction has already been handled previously. The
+DynamoDB table usually implements a Time To Live (TTL) value to expire items to limit the storage
+space used.
+Use multiple AWS accounts for managing quotas
+Many service quotas in AWS are set at the account level. This means that as you add more
+workloads, you can quickly exhaust your limits.
+Designing an application 44AWS Lambda Developer Guide
+An effective way to solve this issue is to use multiple AWS accounts, dedicating each workload to
+its own account. This prevents quotas from being shared with other workloads or non-production
+resources.
+In addition, by using AWS Organizations, you can centrally manage the billing, compliance, and
+security of these accounts. You can attach policies to groups of accounts to avoid custom scripts
+and manual processes.
+One common approach is to provide each developer with an AWS account, and then use separate
+accounts for a beta deployment stage and production:
+In this model, each developer has their own set of limits for the account, so their usage does
+not impact your production environment. This approach also allows developers to test Lambda
+functions locally on their development machines against live cloud resources in their individual
+accounts.
+Designing an application 45AWS Lambda Developer Guide
+Create your first Lambda function
+To get started with Lambda, use the Lambda console to create a function. In a few minutes, you
+can create and deploy a function and test it in the console.
+As you carry out the tutorial, you'll learn some fundamental Lambda concepts, like how to
+pass arguments to your function using the Lambda event object. You'll also learn how to return
+log outputs from your function, and how to view your function's invocation logs in Amazon
+CloudWatch Logs.
+To keep things simple, you create your function using either the Python or Node.js runtime. With
+these interpreted languages, you can edit function code directly in the console's built-in code
+editor. With compiled languages like Java and C#, you must create a deployment package on your
+local build machine and upload it to Lambda. To learn about deploying functions to Lambda using
+other runtimes, see the links in the the section called “Next steps” section.
+Tip
+To learn how to build serverless solutions, check out the Serverless Developer Guide.
+Prerequisites
+Sign up for an AWS account
+If you do not have an AWS account, complete the following steps to create one.
+To sign up for an AWS account
+1. Open https://portal.aws.amazon.com/billing/signup.
+2. Follow the online instructions.
+Part of the sign-up procedure involves receiving a phone call or text message and entering a
+verification code on the phone keypad.
+When you sign up for an AWS account, an AWS account root user is created. The root user
+has access to all AWS services and resources in the account. As a security best practice, assign
+administrative access to a user, and use only the root user to perform tasks that require root
+user access.
+Prerequisites 46AWS Lambda Developer Guide
+AWS sends you a confirmation email after the sign-up process is complete. At any time, you can
+view your current account activity and manage your account by going to https://aws.amazon.com/
+and choosing My Account.
+Create a user with administrative access
+After you sign up for an AWS account, secure your AWS account root user, enable AWS IAM Identity
+Center, and create an administrative user so that you don't use the root user for everyday tasks.
+Secure your AWS account root user
+1. Sign in to the AWS Management Console as the account owner by choosing Root user and
+entering your AWS account email address. On the next page, enter your password.
+For help signing in by using root user, see Signing in as the root user in the AWS Sign-In User
+Guide.
+2. Turn on multi-factor authentication (MFA) for your root user.
+For instructions, see Enable a virtual MFA device for your AWS account root user (console) in
+the IAM User Guide.
+Create a user with administrative access
+1. Enable IAM Identity Center.
+For instructions, see Enabling AWS IAM Identity Center in the AWS IAM Identity Center User
+Guide.
+2. In IAM Identity Center, grant administrative access to a user.
+For a tutorial about using the IAM Identity Center directory as your identity source, see
+Configure user access with the default IAM Identity Center directory in the AWS IAM Identity
+Center User Guide.
+Sign in as the user with administrative access
+• To sign in with your IAM Identity Center user, use the sign-in URL that was sent to your email
+address when you created the IAM Identity Center user.
+Prerequisites 47AWS Lambda Developer Guide
+For help signing in using an IAM Identity Center user, see Signing in to the AWS access portal in
+the AWS Sign-In User Guide.
+Assign access to additional users
+1. In IAM Identity Center, create a permission set that follows the best practice of applying leastprivilege permissions.
+For instructions, see Create a permission set in the AWS IAM Identity Center User Guide.
+2. Assign users to a group, and then assign single sign-on access to the group.
+For instructions, see Add groups in the AWS IAM Identity Center User Guide.
+Create a Lambda function with the console
+In this example, your function takes a JSON object containing two integer values labeled
+"length" and "width". The function multiplies these values to calculate an area and returns this
+as a JSON string.
+Your function also prints the calculated area, along with the name of its CloudWatch log group.
+Later in the tutorial, you’ll learn to use CloudWatch Logs to view records of your functions’
+invocation.
+To create a Hello world Lambda function with the console
+1. Open the Functions page of the Lambda console.
+2. Choose Create function.
+3. Select Author from scratch.
+4. In the Basic information pane, for Function name, enter myLambdaFunction.
+5. For Runtime, choose either Node.js 24 or Python 3.14.
+6. Leave architecture set to x86_64, and then choose Create function.
+In addition to a simple function that returns the message Hello from Lambda!, Lambda also
+creates an execution role for your function. An execution role is an AWS Identity and Access
+Management (IAM) role that grants a Lambda function permission to access AWS services and
+Create the function 48AWS Lambda Developer Guide
+resources. For your function, the role that Lambda creates grants basic permissions to write to
+CloudWatch Logs.
+Use the console's built-in code editor to replace the Hello world code that Lambda created with
+your own function code.
+Node.js
+To modify the code in the console
+1. Choose the Code tab.
+In the console's built-in code editor, you should see the function code that Lambda created.
+If you don't see the index.mjs tab in the code editor, select index.mjs in the file explorer as
+shown on the following diagram.
+2. Paste the following code into the index.mjs tab, replacing the code that Lambda created.
+export const handler = async (event, context) => {
+const length = event.length;
+const width = event.width;
+let area = calculateArea(length, width);
+console.log(`The area is ${area}`);
+console.log('CloudWatch log group: ', context.logGroupName);
+let data = {
+"area": area,
+};
+Create the function 49AWS Lambda Developer Guide
+return JSON.stringify(data);
+function calculateArea(length, width) {
+return length * width;
+}
+};
+3. In the DEPLOY section, choose Deploy to update your function's code:
+Understanding your function code
+Before you move to the next step, let's take a moment to look at the function code and
+understand some key Lambda concepts.
+• The Lambda handler:
+Your Lambda function contains a Node.js function named handler. A Lambda function in
+Node.js can contain more than one Node.js function, but the handler function is always the
+entry point to your code. When your function is invoked, Lambda runs this method.
+When you created your Hello world function using the console, Lambda automatically set the
+name of the handler method for your function to handler. Be sure not to edit the name of
+this Node.js function. If you do, Lambda won’t be able to run your code when you invoke your
+function.
+To learn more about the Lambda handler in Node.js, see the section called “Handler”.
+• The Lambda event object:
+The function handler takes two arguments, event and context. An event in Lambda is a
+JSON formatted document that contains data for your function to process.
+If your function is invoked by another AWS service, the event object contains information
+about the event that caused the invocation. For example, if your function is invoked when
+Create the function 50AWS Lambda Developer Guide
+an object is uploaded to an Amazon Simple Storage Service (Amazon S3) bucket, the event
+contains the name of the bucket and the object key.
+In this example, you’ll create an event in the console by entering a JSON formatted document
+with two key-value pairs.
+• The Lambda context object:
+The second argument that your function takes is context. Lambda passes the context object
+to your function automatically. The context object contains information about the function
+invocation and execution environment.
+You can use the context object to output information about your function's invocation for
+monitoring purposes. In this example, your function uses the logGroupName parameter to
+output the name of its CloudWatch log group.
+To learn more about the Lambda context object in Node.js, see the section called “Context”.
+• Logging in Lambda:
+With Node.js, you can use console methods like console.log and console.error to send
+information to your function's log. The example code uses console.log statements to
+output the calculated area and the name of the function's CloudWatch Logs group. You can
+also use any logging library that writes to stdout or stderr.
+To learn more, see the section called “Logging”. To learn about logging in other runtimes, see
+the 'Building with' pages for the runtimes you're interested in.
+Python
+To modify the code in the console
+1. Choose the Code tab.
+In the console's built-in code editor, you should see the function code that Lambda created.
+If you don't see the lambda_function.py tab in the code editor, select lambda_function.py
+in the file explorer as shown on the following diagram.
+Create the function 51AWS Lambda Developer Guide
+2. Paste the following code into the lambda_function.py tab, replacing the code that Lambda
+created.
+import json
+import logging
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+def lambda_handler(event, context):
+# Get the length and width parameters from the event object. The
+# runtime converts the event object to a Python dictionary
+length = event['length']
+width = event['width']
+area = calculate_area(length, width)
+print(f"The area is {area}")
+logger.info(f"CloudWatch logs group: {context.log_group_name}")
+# return the calculated area as a JSON string
+data = {"area": area}
+return json.dumps(data)
+def calculate_area(length, width):
+return length*width
+3. In the DEPLOY section, choose Deploy to update your function's code:
+Create the function 52AWS Lambda Developer Guide
+Understanding your function code
+Before you move to the next step, let's take a moment to look at the function code and
+understand some key Lambda concepts.
+• The Lambda handler:
+Your Lambda function contains a Python function named lambda_handler. A Lambda
+function in Python can contain more than one Python function, but the handler function
+is always the entry point to your code. When your function is invoked, Lambda runs this
+method.
+When you created your Hello world function using the console, Lambda automatically set the
+name of the handler method for your function to lambda_handler. Be sure not to edit the
+name of this Python function. If you do, Lambda won’t be able to run your code when you
+invoke your function.
+To learn more about the Lambda handler in Python, see the section called “Handler”.
+• The Lambda event object:
+The function lambda_handler takes two arguments, event and context. An event in
+Lambda is a JSON formatted document that contains data for your function to process.
+If your function is invoked by another AWS service, the event object contains information
+about the event that caused the invocation. For example, if your function is invoked when
+an object is uploaded to an Amazon Simple Storage Service (Amazon S3) bucket, the event
+contains the name of the bucket and the object key.
+In this example, you’ll create an event in the console by entering a JSON formatted document
+with two key-value pairs.
+• The Lambda context object:
+Create the function 53AWS Lambda Developer Guide
+The second argument that your function takes is context. Lambda passes the context object
+to your function automatically. The context object contains information about the function
+invocation and execution environment.
+You can use the context object to output information about your function's invocation for
+monitoring purposes. In this example, your function uses the log_group_name parameter to
+output the name of its CloudWatch log group.
+To learn more about the Lambda context object in Python, see the section called “Context”.
+• Logging in Lambda:
+With Python, you can use either a print statement or a Python logging library to send
+information to your function's log. To illustrate the difference in what's captured, the example
+code uses both methods. In a production application, we recommend that you use a logging
+library.
+To learn more, see the section called “Logging”. To learn about logging in other runtimes, see
+the 'Building with' pages for the runtimes you're interested in.
+Invoke the Lambda function using the console code editor
+To invoke your function using the Lambda console code editor, create a test event to send to your
+function. The event is a JSON formatted document containing two key-value pairs with the keys
+"length" and "width".
+To create the test event
+1. In the TEST EVENTS section of the console code editor, choose Create test event.
+2. For Event Name, enter myTestEvent.
+3. In the Event JSON section, replace the default JSON with the following:
+{
+Invoke the function 54AWS Lambda Developer Guide
+"length": 6,
+"width": 7
+}
+4. Choose Save.
+To test your function and view invocation records
+In the TEST EVENTS section of the console code editor, choose the run icon next to your test event:
+When your function finishes running, the response and function logs are displayed in the OUTPUT
+tab. You should see results similar to the following:
+Node.js
+Status: Succeeded
+Test Event Name: myTestEvent
+Response
+"{\"area\":42}"
+Function Logs
+START RequestId: 5c012b0a-18f7-4805-b2f6-40912935034a Version: $LATEST
+2024-08-31T23:39:45.313Z 5c012b0a-18f7-4805-b2f6-40912935034a INFO The area is 42
+2024-08-31T23:39:45.331Z 5c012b0a-18f7-4805-b2f6-40912935034a INFO CloudWatch log
+group: /aws/lambda/myLambdaFunction
+END RequestId: 5c012b0a-18f7-4805-b2f6-40912935034a
+REPORT RequestId: 5c012b0a-18f7-4805-b2f6-40912935034a Duration: 20.67 ms Billed
+Duration: 21 ms Memory Size: 128 MB Max Memory Used: 66 MB Init Duration: 163.87 ms
+Request ID
+5c012b0a-18f7-4805-b2f6-40912935034a
+Python
+Status: Succeeded
+Test Event Name: myTestEvent
+Invoke the function 55AWS Lambda Developer Guide
+Response
+"{\"area\": 42}"
+Function Logs
+START RequestId: 2d0b1579-46fb-4bf7-a6e1-8e08840eae5b Version: $LATEST
+The area is 42
+[INFO] 2024-08-31T23:43:26.428Z 2d0b1579-46fb-4bf7-a6e1-8e08840eae5b CloudWatch logs
+group: /aws/lambda/myLambdaFunction
+END RequestId: 2d0b1579-46fb-4bf7-a6e1-8e08840eae5b
+REPORT RequestId: 2d0b1579-46fb-4bf7-a6e1-8e08840eae5b Duration: 1.42 ms Billed
+Duration: 2 ms Memory Size: 128 MB Max Memory Used: 39 MB Init Duration: 123.74 ms
+Request ID
+2d0b1579-46fb-4bf7-a6e1-8e08840eae5b
+When you invoke your function outside of the Lambda console, you must use CloudWatch Logs to
+view your function's execution results.
+To view your function's invocation records in CloudWatch Logs
+1. Open the Log groups page of the CloudWatch console.
+2. Choose the log group for your function (/aws/lambda/myLambdaFunction). This is the log
+group name that your function printed to the console.
+3. Scroll down and choose the Log stream for the function invocations you want to look at.
+You should see output similar to the following:
+Invoke the function 56AWS Lambda Developer Guide
+Node.js
+INIT_START Runtime Version: nodejs:22.v13 Runtime Version ARN:
+arn:aws:lambda:uswest-2::runtime:e3aaabf6b92ef8755eaae2f4bfdcb7eb8c4536a5e044900570a42bdba7b869d9
+START RequestId: aba6c0fc-cf99-49d7-a77d-26d805dacd20 Version: $LATEST
+2024-08-23T22:04:15.809Z 5c012b0a-18f7-4805-b2f6-40912935034a INFO The area
+is 42
+2024-08-23T22:04:15.810Z aba6c0fc-cf99-49d7-a77d-26d805dacd20 INFO
+CloudWatch log group: /aws/lambda/myLambdaFunction
+END RequestId: aba6c0fc-cf99-49d7-a77d-26d805dacd20
+REPORT RequestId: aba6c0fc-cf99-49d7-a77d-26d805dacd20 Duration: 17.77 ms
+Billed Duration: 18 ms Memory Size: 128 MB Max Memory Used: 67 MB Init
+Duration: 178.85 ms
+Python
+INIT_START Runtime Version: python:3.13.v16 Runtime Version ARN:
+arn:aws:lambda:uswest-2::runtime:ca202755c87b9ec2b58856efb7374b4f7b655a0ea3deb1d5acc9aee9e297b072
+START RequestId: 9d4096ee-acb3-4c25-be10-8a210f0a9d8e Version: $LATEST
+The area is 42
+[INFO] 2024-09-01T00:05:22.464Z 9315ab6b-354a-486e-884a-2fb2972b7d84 CloudWatch
+logs group: /aws/lambda/myLambdaFunction
+END RequestId: 9d4096ee-acb3-4c25-be10-8a210f0a9d8e
+REPORT RequestId: 9d4096ee-acb3-4c25-be10-8a210f0a9d8e Duration: 1.15 ms
+Billed Duration: 2 ms Memory Size: 128 MB Max Memory Used: 40 MB
+Clean up
+When you're finished working with the example function, delete it. You can also delete the log
+group that stores the function's logs, and the execution role that the console created.
+To delete the Lambda function
+1. Open the Functions page of the Lambda console.
+2. Select the function that you created.
+3. Choose Actions, Delete.
+4. Type confirm in the text input field and choose Delete.
+Clean up 57AWS Lambda Developer Guide
+To delete the log group
+1. Open the Log groups page of the CloudWatch console.
+2. Select the function's log group (/aws/lambda/myLambdaFunction).
+3. Choose Actions, Delete log group(s).
+4. In the Delete log group(s) dialog box, choose Delete.
+To delete the execution role
+1. Open the Roles page of the AWS Identity and Access Management (IAM) console.
+2. Select the function's execution role (for example, myLambdaFunction-role-31exxmpl).
+3. Choose Delete.
+4. In the Delete role dialog box, enter the role name, and then choose Delete.
+Additional resources and next steps
+Now that you’ve created and tested a simple Lambda function using the console, take these next
+steps:
+• Learn to add dependencies to your function and deploy it using a .zip deployment package.
+Choose your preferred language from the following links.
+Node.js
+the section called “Deploy .zip file archives”
+Typescript
+the section called “Deploy .zip file archives”
+Python
+the section called “Deploy .zip file archives”
+Ruby
+the section called “Deploy .zip file archives”
+Java
+the section called “Deploy .zip file archives”
+Next steps 58AWS Lambda Developer Guide
+Go
+the section called “Deploy .zip file archives”
+C#
+the section called “Deployment package”
+• To learn how to invoke a Lambda function using another AWS service, see Tutorial: Using an
+Amazon S3 trigger to invoke a Lambda function.
+• Choose one of the following tutorials for more complex examples of using Lambda with other
+AWS services.
+• Tutorial: Using Lambda with API Gateway: Create an Amazon API Gateway REST API that
+invokes a Lambda function.
+• Using a Lambda function to access an Amazon RDS database: Use a Lambda function to write
+data to an Amazon Relational Database Service (Amazon RDS) database through RDS Proxy.
+• Using an Amazon S3 trigger to create thumbnail images: Use a Lambda function to create a
+thumbnail every time an image file is uploaded to an Amazon S3 bucket

@@ -1,0 +1,156 @@
+# Ollama — Local LLM Setup & Command Reference
+
+Official download page: https://ollama.com/download
+
+---
+
+## Installation
+
+### Step 1 — Check if Ollama is already installed
+
+ollama
+
+If the command is recognized and shows a list of options, Ollama is already installed. If not, proceed to install.
+
+### Step 2 — Install Ollama
+
+On Linux, Ollama's install script uses zstd (a fast modern compression algorithm) as a dependency. Install it first, then run the official install script:
+
+sudo apt-get install zstd
+curl -fsSL https://ollama.com/install.sh | sh
+
+### Step 3 — Verify installation
+
+ollama
+
+You should now see multiple subcommands listed (run, pull, list, ps, etc.).
+
+---
+
+## Managing Models
+
+### Pull a model from Ollama library
+
+ollama pull qwen3.5:0.8b      # ~1 GB — good for quick tests on low-resource machines
+ollama pull ministral-3:3b    # ~3 GB — better quality, needs more RAM/VRAM
+
+Browse available models at: https://ollama.com/library
+
+### List all downloaded models
+
+ollama list
+
+### Remove a model (frees up disk space)
+
+ollama rm qwen3.5:0.8b
+
+---
+
+## Running Models
+
+### Start an interactive chat session
+
+ollama run ministral-3:3b
+>>> how are you?
+
+Type your message after >>> and press Enter. The model responds inline.
+
+### Useful slash commands during a session
+
+/show              Show available subcommands
+/show info         Show details for this model (architecture, parameters, quantization, etc.)
+/show license      Show the model's license
+/show modelfile    Show the Modelfile used to build this model
+/show parameters   Show current parameter settings (e.g. temperature)
+/show system       Show the active system prompt (if any)
+/show template     Show the prompt template used by the model
+
+### Exit the session
+
+/exit
+
+---
+
+## Runtime Management
+
+### Check which models are currently loaded in memory
+
+ollama ps
+
+Useful to verify whether a model is actively consuming RAM/VRAM.
+
+### Stop a running model (unloads it from memory)
+
+ollama stop ministral-3:3b
+
+Always verify with "ollama ps" before and after stopping.
+
+---
+
+## Vision — Analyzing Local Images
+
+Multimodal models (those with vision capability) can analyze images directly from your file path:
+
+ollama run ministral-3:3b "Analyze and explain this image. /mnt/c/deploy-with-niket/ai-mastery/01-ollama/01-basic-commands/my_image.png"
+
+Note: Not all models support vision. Check /show info -> Capabilities to confirm "vision" is listed before using this feature.
+
+---
+
+## Sample: /show info Output
+
+Model
+    architecture        mistral3
+    parameters          3.8B
+    context length      262144
+    embedding length    3072
+    quantization        Q4_K_M
+
+Capabilities
+    completion
+    vision
+    tools
+
+Parameters
+    temperature    0.15
+
+Key fields explained:
+
+- parameters — Number of model weights (3.8B = 3.8 billion). More parameters generally means higher quality but more resource usage.
+- context length — Maximum tokens the model can process in one conversation (262144 is very large — supports long documents).
+- quantization — Q4_K_M means the model weights are compressed to ~4-bit precision. Reduces memory usage significantly with minimal quality loss.
+- temperature — Controls output randomness. 0.15 is quite low — responses will be focused and deterministic. Higher values (e.g. 0.8) make responses more creative.
+- vision under Capabilities — confirms this model can process images.
+- tools under Capabilities — confirms this model supports function/tool calling.
+
+---
+
+## Setting a System Prompt
+
+Use /set during a session to configure a persistent system prompt that shapes the model's behavior for the rest of the conversation:
+
+/set system "You are a senior Linux systems engineer. Answer only with precise technical details."
+
+Example use case — asking about your own system specs:
+
+/set system "You are a PC hardware expert. I will give you my system specs and you will answer questions based only on those specs, not generic requirements.
+I have a windows 11 laptop with 16GB RAM, Ryzen 7 processor, NVIDIA RTX 4060 dedicated GPU with 8GB VRAM"
+>>> will my system run Call of Duty Black Ops? Don't provide minimum requirements — answer based on my system specs only.
+
+This is more reliable than asking in a plain prompt because the system message persists across all turns in the session.
+
+---
+
+## Quick Reference
+
+Task                        Command
+---                         ---
+Check installation          ollama
+Pull a model                ollama pull <model:tag>
+Run a model                 ollama run <model:tag>
+List downloaded models      ollama list
+Check loaded models         ollama ps
+Stop a loaded model         ollama stop <model:tag>
+Remove a model              ollama rm <model:tag>
+Analyze an image            ollama run <model> "prompt /path/to/image"
+Exit session                /exit

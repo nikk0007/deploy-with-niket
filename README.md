@@ -1,2 +1,4 @@
-# ai-mastery
-AI projects spanning local ai projects, RAG, on cloud, agentic AI, Python Libraries etc
+# Deploy With Niket
+It has all the source code I use to teach Devops, Cloud, Gen AI, Agentic AI on my youtube channel "Deploy With Niket".
+
+https://www.youtube.com/@DeployWithNiket/videos
